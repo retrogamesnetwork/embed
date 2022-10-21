@@ -1,0 +1,723 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arima:wght@700&amp;display=swap" />
+    <style>
+      * {
+	 margin: 0;
+	 padding: 0;
+	 box-sizing: border-box;
+	 font-family: sans-serif;
+}
+ .container {
+	 display: flex;
+	 justify-content: center;
+	 align-items: center;
+	 width: 100%;
+	 height: 100vh;
+}
+ .container .overlay {
+	 display: flex;
+	 visibility: hidden;
+	 align-items: center;
+	 justify-content: center;
+	 flex-direction: column;
+	 position: fixed;
+	 left: 0;
+	 right: 0;
+	 top: 0;
+	 bottom: 0;
+	 background: rgba(0, 0, 0, 0.75);
+}
+ .container .overlay .game-over {
+	 display: flex;
+	 align-items: center;
+	 justify-content: center;
+	 flex-direction: column;
+	 text-align: center;
+	 font-size: 10vw;
+	 color: wheat;
+}
+ .container .overlay .game-over button {
+	 padding: 10px 20px;
+}
+ .container .board {
+	 margin: 0;
+	 display: grid;
+	 grid-template-rows: repeat(8, 65px);
+	 box-shadow: 0px 0px 10px rgba(16, 15, 15, 0.71);
+	 border-radius: 5px;
+	 overflow: hidden;
+}
+ .container .board .row {
+	 display: grid;
+	 grid-template-columns: repeat(8, 65px);
+}
+ .container .board .row .emptySpace {
+	 background-image: linear-gradient(to right top, #ffdfc0, #ffddbc, #ffdbb7, #ffd9b3, #ffd7af) !important;
+}
+ .container .board .row .boardSquare {
+	 display: flex;
+	 justify-content: center;
+	 align-items: center;
+	 background-image: linear-gradient(to right top, #5d3c1c, #5e3b19, #5e3a16, #5f3913, #5f3810);
+	 width: 65px !important;
+	 height: 65px !important;
+}
+ .container .board .row .boardSquare .king.red-piece {
+	 background-color: #821414;
+}
+ .container .board .row .boardSquare .king.black-piece {
+	 background-color: #5f5f5f;
+}
+ .container .board .row .boardSquare .black-piece {
+	 width: 40px;
+	 height: 40px;
+	 padding: 12px;
+	 background-color: black;
+	 box-shadow: 0px 0px 10px rgba(16, 15, 15, 0.71);
+	 border-radius: 50px;
+	 cursor: pointer;
+	 user-select: none;
+}
+ .container .board .row .boardSquare .red-piece {
+	 box-shadow: 0px 0px 10px rgba(16, 15, 15, 0.71);
+	 width: 40px;
+	 height: 40px;
+	 padding: 12px;
+	 background-color: red;
+	 border-radius: 50px;
+	 cursor: pointer;
+}
+ .container .turn {
+	 position: absolute;
+	 top: 0px;
+	 font-size: 5rem;
+	 text-transform: uppercase;
+	 pointer-events: none;
+	 user-select: none;
+	 z-index: -1;
+}
+ @media screen and (max-width: 560px) {
+	 .container .board {
+		 grid-template-rows: repeat(8, 12vw);
+	}
+	 .container .board .row {
+		 grid-template-columns: repeat(8, 12vw);
+	}
+	 .container .board .row .boardSquare {
+		 width: 12vw !important;
+		 height: 12vw !important;
+		 display: flex;
+		 justify-content: center;
+		 align-items: center;
+	}
+	 .container .board .row .boardSquare .red-piece {
+		 height: 4.5vw;
+		 width: 4.5vw;
+	}
+	 .container .board .row .boardSquare .black-piece {
+		 height: 4.5vw;
+		 width: 4.5vw;
+	}
+	 .container .turn {
+		 font-size: 3rem;
+	}
+}
+ 
+    </style>
+    <script>
+      const board = [
+	null,
+	0,
+	null,
+	1,
+	null,
+	2,
+	null,
+	3,
+	4,
+	null,
+	5,
+	null,
+	6,
+	null,
+	7,
+	null,
+	null,
+	8,
+	null,
+	9,
+	null,
+	10,
+	null,
+	11,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	null,
+	12,
+	null,
+	13,
+	null,
+	14,
+	null,
+	15,
+	null,
+	null,
+	16,
+	null,
+	17,
+	null,
+	18,
+	null,
+	19,
+	20,
+	null,
+	21,
+	null,
+	22,
+	null,
+	23,
+	null
+];
+
+let findPiece = (pieceId) => {
+	let parsed = parseInt(pieceId);
+	return board.indexOf(parsed);
+};
+
+const cells = document.querySelectorAll(".boardSquare"),
+	gameOverText = document.querySelector(".game-over");
+let redsPieces = document.querySelectorAll("p");
+let blacksPieces = document.querySelectorAll("span");
+
+let turn = true;
+let redScore = 12;
+let blackScore = 12;
+let playerPieces;
+
+let selectedPiece = {
+	pieceId: -1,
+	indexOfBoardPiece: -1,
+	isKing: false,
+	seventhSpace: false,
+	ninthSpace: false,
+	fourteenthSpace: false,
+	eighteenthSpace: false,
+	minusSeventhSpace: false,
+	minusNinthSpace: false,
+	minusFourteenthSpace: false,
+	minusEighteenthSpace: false
+};
+
+const givePiecesEventListeners = () => {
+	if (turn) {
+		for (let i = 0; i < redsPieces.length; i++) {
+			redsPieces[i].addEventListener("click", getPlayerPieces);
+		}
+	} else {
+		for (let i = 0; i < blacksPieces.length; i++) {
+			blacksPieces[i].addEventListener("click", getPlayerPieces);
+		}
+	}
+};
+const getPlayerPieces = () => {
+	if (turn) {
+		playerPieces = redsPieces;
+	} else {
+		playerPieces = blacksPieces;
+	}
+	removeCellOnClick();
+	resetBorders();
+};
+
+const removeCellOnClick = () => {
+	for (let i = 0; i < cells.length; i++) {
+		cells[i].removeAttribute("onclick");
+	}
+};
+const resetBorders = () => {
+	for (let i = 0; i < playerPieces.length; i++) {
+		playerPieces[i].style.border = "none";
+	}
+	resetSelectedPieceProperties();
+	getSelectedPiece();
+};
+
+const resetSelectedPieceProperties = () => {
+	selectedPiece.pieceId = -1;
+	selectedPiece.pieceId = -1;
+	selectedPiece.isKing = false;
+	selectedPiece.seventhSpace = false;
+	selectedPiece.ninthSpace = false;
+	selectedPiece.fourteenthSpace = false;
+	selectedPiece.eighteenthSpace = false;
+	selectedPiece.minusSeventhSpace = false;
+	selectedPiece.minusNinthSpace = false;
+	selectedPiece.minusFourteenthSpace = false;
+	selectedPiece.minusEighteenthSpace = false;
+};
+
+const getSelectedPiece = () => {
+	selectedPiece.pieceId = parseInt(event.target.id);
+	selectedPiece.indexOfBoardPiece = findPiece(selectedPiece.pieceId);
+	isPieceKing();
+};
+
+const isPieceKing = () => {
+	if (
+		document.getElementById(selectedPiece.pieceId).classList.contains("king")
+	) {
+		selectedPiece.isKing = true;
+	} else {
+		selectedPiece.isKing = false;
+	}
+	getAvailableSpaces();
+};
+
+const getAvailableSpaces = () => {
+	if (
+		board[selectedPiece.indexOfBoardPiece + 7] === null &&
+		cells[selectedPiece.indexOfBoardPiece + 7].classList.contains(
+			"noPieceHere"
+		) !== true
+	) {
+		selectedPiece.seventhSpace = true;
+	}
+	if (
+		board[selectedPiece.indexOfBoardPiece + 9] === null &&
+		cells[selectedPiece.indexOfBoardPiece + 9].classList.contains(
+			"noPieceHere"
+		) !== true
+	) {
+		selectedPiece.ninthSpace = true;
+	}
+	if (
+		board[selectedPiece.indexOfBoardPiece - 7] === null &&
+		cells[selectedPiece.indexOfBoardPiece - 7].classList.contains(
+			"noPieceHere"
+		) !== true
+	) {
+		selectedPiece.minusSeventhSpace = true;
+	}
+	if (
+		board[selectedPiece.indexOfBoardPiece - 9] === null &&
+		cells[selectedPiece.indexOfBoardPiece - 9].classList.contains(
+			"noPieceHere"
+		) !== true
+	) {
+		selectedPiece.minusNinthSpace = true;
+	}
+	checkAvailableJumpSpaces();
+};
+
+const checkAvailableJumpSpaces = () => {
+	if (turn) {
+		if (
+			board[selectedPiece.indexOfBoardPiece + 14] === null &&
+			cells[selectedPiece.indexOfBoardPiece + 14].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece + 7] >= 12
+		) {
+			selectedPiece.fourteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece + 18] === null &&
+			cells[selectedPiece.indexOfBoardPiece + 18].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece + 9] >= 12
+		) {
+			selectedPiece.eighteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece - 14] === null &&
+			cells[selectedPiece.indexOfBoardPiece - 14].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece - 7] >= 12
+		) {
+			selectedPiece.minusFourteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece - 18] === null &&
+			cells[selectedPiece.indexOfBoardPiece - 18].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece - 9] >= 12
+		) {
+			selectedPiece.minusEighteenthSpace = true;
+		}
+	} else {
+		if (
+			board[selectedPiece.indexOfBoardPiece + 14] === null &&
+			cells[selectedPiece.indexOfBoardPiece + 14].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece + 7] < 12 &&
+			board[selectedPiece.indexOfBoardPiece + 7] !== null
+		) {
+			selectedPiece.fourteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece + 18] === null &&
+			cells[selectedPiece.indexOfBoardPiece + 18].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece + 9] < 12 &&
+			board[selectedPiece.indexOfBoardPiece + 9] !== null
+		) {
+			selectedPiece.eighteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece - 14] === null &&
+			cells[selectedPiece.indexOfBoardPiece - 14].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece - 7] < 12 &&
+			board[selectedPiece.indexOfBoardPiece - 7] !== null
+		) {
+			selectedPiece.minusFourteenthSpace = true;
+		}
+		if (
+			board[selectedPiece.indexOfBoardPiece - 18] === null &&
+			cells[selectedPiece.indexOfBoardPiece - 18].classList.contains(
+				"noPieceHere"
+			) !== true &&
+			board[selectedPiece.indexOfBoardPiece - 9] < 12 &&
+			board[selectedPiece.indexOfBoardPiece - 9] !== null
+		) {
+			selectedPiece.minusEighteenthSpace = true;
+		}
+	}
+	checkPieceConditions();
+};
+
+const checkPieceConditions = () => {
+	if (selectedPiece.isKing) {
+		givePieceBorder();
+	} else {
+		if (turn) {
+			selectedPiece.minusSeventhSpace = false;
+			selectedPiece.minusNinthSpace = false;
+			selectedPiece.minusFourteenthSpace = false;
+			selectedPiece.minusEighteenthSpace = false;
+		} else {
+			selectedPiece.seventhSpace = false;
+			selectedPiece.ninthSpace = false;
+			selectedPiece.fourteenthSpace = false;
+			selectedPiece.eighteenthSpace = false;
+		}
+		givePieceBorder();
+	}
+};
+
+const givePieceBorder = () => {
+	if (
+		selectedPiece.seventhSpace ||
+		selectedPiece.ninthSpace ||
+		selectedPiece.fourteenthSpace ||
+		selectedPiece.eighteenthSpace ||
+		selectedPiece.minusSeventhSpace ||
+		selectedPiece.minusNinthSpace ||
+		selectedPiece.minusFourteenthSpace ||
+		selectedPiece.minusEighteenthSpace
+	) {
+		document.getElementById(selectedPiece.pieceId).style.border =
+			"2px solid white";
+		giveCellsClick();
+	} else {
+		return;
+	}
+};
+
+const giveCellsClick = () => {
+	if (selectedPiece.seventhSpace) {
+		cells[selectedPiece.indexOfBoardPiece + 7].setAttribute(
+			"onclick",
+			"makeMove(7)"
+		);
+	}
+	if (selectedPiece.ninthSpace) {
+		cells[selectedPiece.indexOfBoardPiece + 9].setAttribute(
+			"onclick",
+			"makeMove(9)"
+		);
+	}
+	if (selectedPiece.fourteenthSpace) {
+		cells[selectedPiece.indexOfBoardPiece + 14].setAttribute(
+			"onclick",
+			"makeMove(14)"
+		);
+	}
+	if (selectedPiece.eighteenthSpace) {
+		cells[selectedPiece.indexOfBoardPiece + 18].setAttribute(
+			"onclick",
+			"makeMove(18)"
+		);
+	}
+	if (selectedPiece.minusSeventhSpace) {
+		cells[selectedPiece.indexOfBoardPiece - 7].setAttribute(
+			"onclick",
+			"makeMove(-7)"
+		);
+	}
+	if (selectedPiece.minusNinthSpace) {
+		cells[selectedPiece.indexOfBoardPiece - 9].setAttribute(
+			"onclick",
+			"makeMove(-9)"
+		);
+	}
+	if (selectedPiece.minusFourteenthSpace) {
+		cells[selectedPiece.indexOfBoardPiece - 14].setAttribute(
+			"onclick",
+			"makeMove(-14)"
+		);
+	}
+	if (selectedPiece.minusEighteenthSpace) {
+		cells[selectedPiece.indexOfBoardPiece - 18].setAttribute(
+			"onclick",
+			"makeMove(-18)"
+		);
+	}
+};
+
+const makeMove = (number) => {
+	document.getElementById(selectedPiece.pieceId).remove();
+	cells[selectedPiece.indexOfBoardPiece].innerHTML = "";
+	if (turn) {
+		if (selectedPiece.isKing) {
+			cells[
+				selectedPiece.indexOfBoardPiece + number
+			].innerHTML = `<p class="red-piece king" id="${selectedPiece.pieceId}"></p>`;
+			redsPieces = document.querySelectorAll("p");
+		} else {
+			cells[
+				selectedPiece.indexOfBoardPiece + number
+			].innerHTML = `<p class="red-piece" id="${selectedPiece.pieceId}"></p>`;
+			redsPieces = document.querySelectorAll("p");
+		}
+	} else {
+		if (selectedPiece.isKing) {
+			cells[
+				selectedPiece.indexOfBoardPiece + number
+			].innerHTML = `<span class="black-piece king" id="${selectedPiece.pieceId}"></span>`;
+			blacksPieces = document.querySelectorAll("span");
+		} else {
+			cells[
+				selectedPiece.indexOfBoardPiece + number
+			].innerHTML = `<span class="black-piece" id="${selectedPiece.pieceId}"></span>`;
+			blacksPieces = document.querySelectorAll("span");
+		}
+	}
+
+	let indexOfPiece = selectedPiece.indexOfBoardPiece;
+	if (number === 14 || number === -14 || number === 18 || number === -18) {
+		changeData(indexOfPiece, indexOfPiece + number, indexOfPiece + number / 2);
+	} else {
+		changeData(indexOfPiece, indexOfPiece + number);
+	}
+};
+
+// Changes the board states data on the back end
+const changeData = (indexOfBoardPiece, modifiedIndex, removePiece) => {
+	board[indexOfBoardPiece] = null;
+	board[modifiedIndex] = parseInt(selectedPiece.pieceId);
+	if (turn && selectedPiece.pieceId < 12 && modifiedIndex >= 57) {
+		document.getElementById(selectedPiece.pieceId).classList.add("king");
+	}
+	if (turn === false && selectedPiece.pieceId >= 12 && modifiedIndex <= 7) {
+		document.getElementById(selectedPiece.pieceId).classList.add("king");
+	}
+	if (removePiece) {
+		board[removePiece] = null;
+		if (turn && selectedPiece.pieceId < 12) {
+			cells[removePiece].innerHTML = "";
+			blackScore--;
+		}
+		if (turn === false && selectedPiece.pieceId >= 12) {
+			cells[removePiece].innerHTML = "";
+			redScore--;
+		}
+	}
+	resetSelectedPieceProperties();
+	removeCellOnClick();
+	removeEventListeners();
+};
+
+const removeEventListeners = () => {
+	if (turn) {
+		for (let i = 0; i < redsPieces.length; i++) {
+			redsPieces[i].removeEventListener("click", getPlayerPieces);
+		}
+	} else {
+		for (let i = 0; i < blacksPieces.length; i++) {
+			blacksPieces[i].removeEventListener("click", getPlayerPieces);
+		}
+	}
+	checkForWinner();
+};
+const checkForWinner = () => {
+	if (blackScore === 0) {
+		gameOverText.innerHTML =
+			'<p>GAME OVER! <br><span style="color: red">RED</span> WINS!</p><button class="reload">Play Again!</button>';
+		document.querySelector(".overlay").style.visibility = "visible";
+		document.querySelector(".reload").addEventListener("click", () => {
+			window.location.reload(true);
+		});
+	} else if (redScore === 0) {
+		document.querySelector(".overlay").style.visibility = "visible";
+		gameOverText.innerHTML =
+			'<p>GAME OVER! <br><span style="color: black">BLACK</span> WINS!</p><button class="reload">Play Again!</button>';
+		document.querySelector(".reload").addEventListener("click", () => {
+			window.location.reload(true);
+		});
+	}
+
+	changeTurns();
+};
+
+const changeTurns = () => {
+	if (turn) {
+		turn = false;
+		document.querySelector(".turn").textContent = "black turn";
+	} else {
+		document.querySelector(".turn").textContent = "red turn";
+		turn = true;
+	}
+	givePiecesEventListeners();
+};
+
+givePiecesEventListeners();
+
+    </script>
+  </head>
+  <body>
+    <div class="container">
+	<div class="turn">red turn</div>
+	<div class="overlay">
+		<div class="game-over">
+		</div>
+	</div>
+	<div class="board">
+		<div class="row">
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="0"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="1"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="2"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="3"></p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="boardSquare">
+				<p class="red-piece" id="4"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="5"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="6"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="7"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+		</div>
+		<div class="row">
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="8"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="9"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="10"></p>
+			</div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare">
+				<p class="red-piece" id="11"></p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+		</div>
+		<div class="row">
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"></div>
+		</div>
+		<div class="row">
+			<div class="boardSquare"><span class="black-piece" id="12"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="13"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="14"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="15"></span></div>
+			<div class="emptySpace boardSquare"></div>
+		</div>
+		<div class="row">
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="16"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="17"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="18"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="19"></span></div>
+		</div>
+		<div class="row">
+			<div class="boardSquare"><span class="black-piece" id="20"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="21"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="22"></span></div>
+			<div class="emptySpace boardSquare"></div>
+			<div class="boardSquare"><span class="black-piece" id="23"></span></div>
+			<div class="emptySpace boardSquare"></div>
+		</div>
+	</div>
+</div>
+  </body>
+</html>
